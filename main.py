@@ -1,8 +1,11 @@
+import os
+
 import telebot, wikipedia, re
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
+from icrawler.builtin import GoogleImageCrawler
 
-bot = telebot.TeleBot('1982714627:AAGxOtxmSnOcXcwYAtA0sDqt-TSBfCEmaUs')
+bot = telebot.TeleBot('')
 
 wikipedia.set_lang("ru")
 
@@ -83,13 +86,34 @@ def start_message(message):
 
 question = ""
 
+search_word = ['загугли', 'найди']
+
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
     command = message.text.lower()
+    command_list = command.split()
     if command == "не так":
         bot.send_message(message.from_user.id, "а как?")
         bot.register_next_step_handler(message, wrong)
+
+    elif command_list[0] in search_word:
+        command_list.pop(0)
+        search = ' '.join(command_list)
+
+        files = os.listdir('./img')
+        if len(files) != 0:
+            for file in files:
+                os.remove('./img/' + file)
+
+        crawler = GoogleImageCrawler(storage={'root_dir': './img'})
+        crawler.crawl(keyword=search, max_num=5)
+
+        for photo in files:
+            photo = open('./img/' + photo, 'rb')
+            bot.send_photo(message.chat.id, photo)
+
+
     else:
         global question
         question = command
@@ -106,6 +130,21 @@ def wrong(message):
         f.write(a)
     bot.send_message(message.from_user.id, "Готово")
     update()
+
+
+def google_search(message):
+    print('[OK] << start function')
+    files = os.listdir('./img')
+    if len(files) != 0:
+        for file in files:
+            os.remove('./img/' + file)
+
+    crawler = GoogleImageCrawler(storage={'root_dir': './img'})
+    crawler.crawl(keyword=message.txt, max_num=5)
+
+    for photo in files:
+        photo = open(f'./img/{photo}', 'rb')
+        bot.send_photo(message.chat.id, photo)
 
 
 bot.polling(none_stop=True)
