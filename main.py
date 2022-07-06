@@ -133,8 +133,8 @@ def wrong(message):
 
 
 def google_search(message):
-    print('[OK] << start function')
     files = os.listdir('./img')
+
     if len(files) != 0:
         for file in files:
             os.remove('./img/' + file)
